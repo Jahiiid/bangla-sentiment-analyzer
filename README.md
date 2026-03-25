@@ -118,7 +118,7 @@ bangla-sentiment-analyzer/
 - [x] Basic sentiment detection (Positive / Negative)
 - [x] Web interface with confidence score
 - [x] Animated result display
-- [ ] Expand dataset to 500+ sentences
+- [x] Expand dataset to 500+ sentences
 - [ ] Add Neutral sentiment class
 - [ ] Integrate BERT / BanglaBERT for higher accuracy
 - [ ] Deploy on Hugging Face Spaces (public demo)

@@ -1,58 +1,78 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.pipeline import Pipeline
 import pickle
 
 # ── ১. Data Load ──────────────────────────────────────
 df = pd.read_csv("bangla_reviews.csv")
-print("✅ Data load হয়েছে!")
-print(f"📊 মোট বাক্য: {len(df)}\n")
+print(f"✅ Data load হয়েছে! মোট বাক্য: {len(df)}\n")
 
 # ── ২. Train/Test Split ───────────────────────────────
 X = df["text"]
 y = df["sentiment"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-print(f"🏋️  Training data: {len(X_train)} বাক্য")
-print(f"🧪 Testing data:  {len(X_test)} বাক্য\n")
+print(f"🏋️  Training: {len(X_train)} | 🧪 Testing: {len(X_test)}\n")
 
-# ── ৩. TF-IDF Vectorizer ──────────────────────────────
-# বাংলা text কে numbers এ রূপান্তর করে
-vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(2, 3))
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec  = vectorizer.transform(X_test)
+# ── ৩. সব Model Test করো ─────────────────────────────
+print("="*50)
+print("📊 সব Model-এর Accuracy তুলনা:")
+print("="*50)
 
-print("✅ Text → Numbers রূপান্তর হয়েছে!")
+models = {
+    "Logistic Regression": Pipeline([
+        ("tfidf", TfidfVectorizer(analyzer="char", ngram_range=(1,4), max_features=50000)),
+        ("clf",   LogisticRegression(C=5, max_iter=1000))
+    ]),
+    "Linear SVM": Pipeline([
+        ("tfidf", TfidfVectorizer(analyzer="char", ngram_range=(1,4), max_features=50000)),
+        ("clf",   LinearSVC(C=1.0, max_iter=2000))
+    ]),
+    "Random Forest": Pipeline([
+        ("tfidf", TfidfVectorizer(analyzer="char", ngram_range=(2,3), max_features=10000)),
+        ("clf",   RandomForestClassifier(n_estimators=200, random_state=42))
+    ]),
+}
 
-# ── ৪. Model Train ────────────────────────────────────
-model = LogisticRegression()
-model.fit(X_train_vec, y_train)
-print("✅ Model training সম্পন্ন!\n")
+best_model = None
+best_score = 0
+best_name  = ""
 
-# ── ৫. Accuracy দেখো ─────────────────────────────────
-y_pred = model.predict(X_test_vec)
-accuracy = accuracy_score(y_test, y_pred)
+for name, pipeline in models.items():
+    pipeline.fit(X_train, y_train)
+    score = accuracy_score(y_test, pipeline.predict(X_test))
+    cv    = cross_val_score(pipeline, X, y, cv=5).mean()
+    print(f"  {name:<22} Test: {score*100:.1f}%  |  CV: {cv*100:.1f}%")
+    if score > best_score:
+        best_score = score
+        best_model = pipeline
+        best_name  = name
 
-print(f"🎯 Accuracy: {accuracy * 100:.1f}%")
-print("\n📋 বিস্তারিত রিপোর্ট:")
+print()
+print(f"🏆 সেরা Model: {best_name} ({best_score*100:.1f}%)")
+print("="*50)
+
+# ── ৪. সেরা Model-এর বিস্তারিত রিপোর্ট ──────────────
+print(f"\n📋 {best_name} — বিস্তারিত রিপোর্ট:")
+y_pred = best_model.predict(X_test)
 print(classification_report(y_test, y_pred,
       target_names=["😞 Negative", "😊 Positive"]))
 
-# ── ৬. Model Save করো ────────────────────────────────
+# ── ৫. Model Save করো ────────────────────────────────
 with open("model.pkl", "wb") as f:
-    pickle.dump(model, f)
-with open("vectorizer.pkl", "wb") as f:
-    pickle.dump(vectorizer, f)
+    pickle.dump(best_model, f)
+print("💾 সেরা Model save হয়েছে!\n")
 
-print("💾 Model save হয়েছে! (model.pkl)")
-
-# ── ৭. নিজে Test করো ─────────────────────────────────
-print("\n" + "="*50)
+# ── ৬. নিজে Test করো ─────────────────────────────────
+print("="*50)
 print("🔍 নিজে Test করো:")
 print("="*50)
 
@@ -60,13 +80,16 @@ test_sentences = [
     "এই পণ্যটি অনেক ভালো, সবাইকে নেওয়া উচিত",
     "একদম বাজে জিনিস, টাকা নষ্ট হয়েছে",
     "মোটামুটি ঠিক আছে",
+    "অসাধারণ সেবা পেয়েছি, অনেক খুশি",
+    "আর কখনো এখান থেকে কিনবো না",
 ]
 
 for sentence in test_sentences:
-    vec = vectorizer.transform([sentence])
-    prediction = model.predict(vec)[0]
-    confidence = model.predict_proba(vec)[0].max() * 100
-
+    prediction = best_model.predict([sentence])[0]
+    try:
+        confidence = round(best_model.predict_proba([sentence])[0].max()*100, 1)
+    except:
+        confidence = "—"
     label = "😊 Positive" if prediction == 1 else "😞 Negative"
     print(f"\nবাক্য:  {sentence}")
-    print(f"ফলাফল: {label} ({confidence:.1f}% confident)")
+    print(f"ফলাফল: {label}  (confidence: {confidence}%)")

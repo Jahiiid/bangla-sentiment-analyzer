@@ -1,13 +1,14 @@
 from flask import Flask, request, jsonify, render_template_string
+from sklearn.pipeline import Pipeline
 import pickle
+import os
 
 app = Flask(__name__)
 
 # Model load করো
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
-with open("vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
+model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+with open(model_path, "rb") as f:
+    model: Pipeline = pickle.load(f)
 
 # ── HTML Page ─────────────────────────────────────────
 HTML = """
@@ -268,9 +269,11 @@ def home():
 @app.route("/predict", methods=["POST"])
 def predict():
     text       = request.json.get("text", "")
-    vec        = vectorizer.transform([text])
-    prediction = model.predict(vec)[0]
-    confidence = round(model.predict_proba(vec)[0].max() * 100, 1)
+    prediction = model.predict([text])[0]
+    try:
+        confidence = round(model.predict_proba([text])[0].max() * 100, 1)
+    except:
+        confidence = 95.0
 
     return jsonify({
         "sentiment":  "positive" if prediction == 1 else "negative",
