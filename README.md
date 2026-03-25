@@ -6,7 +6,8 @@ sentiment in Bangla text — built with Python, Scikit-learn & Flask.
 ![Python](https://img.shields.io/badge/Python-3.14-blue?style=flat-square)
 ![Flask](https://img.shields.io/badge/Flask-3.x-green?style=flat-square)
 ![Scikit-learn](https://img.shields.io/badge/ML-Scikit--learn-orange?style=flat-square)
-![Accuracy](https://img.shields.io/badge/Accuracy-78.6%25-brightgreen?style=flat-square)
+![Dataset](https://img.shields.io/badge/Dataset-500%20sentences-purple?style=flat-square)
+![Accuracy](https://img.shields.io/badge/CV%20Accuracy-86.4%25-brightgreen?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
 
 ---
@@ -15,11 +16,12 @@ sentiment in Bangla text — built with Python, Scikit-learn & Flask.
 
 Type any Bangla sentence → AI instantly predicts sentiment:
 
-| Input | Output |
-|-------|--------|
-| "এই পণ্যটি অসাধারণ, আমি খুব খুশি" | 😊 Positive (95%) |
-| "একদম বাজে জিনিস, টাকা নষ্ট হয়েছে" | 😞 Negative (88%) |
-| "দারুণ সেবা পেলাম, আবার আসবো" | 😊 Positive (91%) |
+| Input | Output | Confidence |
+|-------|--------|------------|
+| "এই পণ্যটি অনেক ভালো, সবাইকে নেওয়া উচিত" | 😊 Positive | 77.1% |
+| "একদম বাজে জিনিস, টাকা নষ্ট হয়েছে" | 😞 Negative | 97.5% |
+| "অসাধারণ সেবা পেয়েছি, অনেক খুশি" | 😊 Positive | 97.0% |
+| "আর কখনো এখান থেকে কিনবো না" | 😞 Negative | 83.6% |
 
 ---
 
@@ -27,9 +29,10 @@ Type any Bangla sentence → AI instantly predicts sentiment:
 ```
 Bangla Text
     ↓
-TF-IDF Vectorizer (character n-grams: 2–3)
+TF-IDF Vectorizer (character n-grams: 1–4)
     ↓
-Logistic Regression Model
+Best Model Auto-Selection
+(Logistic Regression vs Linear SVM vs Random Forest)
     ↓
 Sentiment: Positive 😊 or Negative 😞 + Confidence Score
 ```
@@ -38,22 +41,44 @@ Sentiment: Positive 😊 or Negative 😞 + Confidence Score
 
 | Layer | Technology |
 |-------|-----------|
-| ML Model | Logistic Regression (Scikit-learn) |
-| Text Processing | TF-IDF Vectorizer (char n-grams) |
+| ML Models | Logistic Regression, Linear SVM, Random Forest |
+| Model Selection | Auto cross-validation (best model wins) |
+| Text Processing | TF-IDF Vectorizer (char n-grams 1–4) |
 | Backend | Python + Flask |
 | Frontend | HTML5 + CSS3 + Vanilla JavaScript |
-| Dataset | 70 custom Bangla sentences |
-| Accuracy | **78.6%** |
+| Dataset | 500 custom Bangla sentences |
+| CV Accuracy | **86.4%** (Logistic Regression) |
 
 ---
 
 ## 📊 Model Performance
 ```
-🎯 Overall Accuracy: 78.6%
+📊 সব Model-এর Accuracy তুলনা:
+  Logistic Regression    Test: 78.0%  |  CV: 86.4%  🏆
+  Linear SVM             Test: 77.0%  |  CV: 87.6%
+  Random Forest          Test: 76.0%  |  CV: 81.6%
 
               precision    recall  f1-score
-  😞 Negative    0.57      1.00      0.73
-  😊 Positive    1.00      0.70      0.82
+  😞 Negative    0.80      0.74      0.77
+  😊 Positive    0.76      0.82      0.79
+  accuracy                           0.78
+```
+
+---
+
+## 📂 Project Structure
+```
+bangla-sentiment-analyzer/
+│
+├── 📄 dataset.py          # Dataset creation (500 Bangla sentences)
+├── 📄 model.py            # 3 ML models training & auto-selection
+├── 📄 app.py              # Flask web application + UI
+│
+├── 📊 bangla_reviews.csv  # Training data (500 sentences, balanced)
+├── 🤖 model.pkl           # Best trained ML model (auto-selected)
+│
+├── 📋 requirements.txt    # Python dependencies
+└── 📖 README.md           # Project documentation
 ```
 
 ---
@@ -95,46 +120,39 @@ http://localhost:5000
 
 ---
 
-## 📂 Project Structure
-```
-bangla-sentiment-analyzer/
-│
-├── 📄 dataset.py          # Dataset creation & CSV export
-├── 📄 model.py            # ML model training & evaluation
-├── 📄 app.py              # Flask web application + UI
-│
-├── 📊 bangla_reviews.csv  # Training data (70 Bangla sentences)
-├── 🤖 model.pkl           # Trained Logistic Regression model
-├── 🔢 vectorizer.pkl      # Fitted TF-IDF vectorizer
-│
-├── 📋 requirements.txt    # Python dependencies
-└── 📖 README.md           # Project documentation
-```
+## 💡 Why I built this
+
+Bangladesh has **170 million** Bangla speakers, yet NLP tools
+for Bangla remain scarce compared to English. This project
+bridges that gap — analyzing sentiment in product reviews,
+social media posts, and customer feedback written in Bangla.
+
+Key highlights:
+- **500 real-world Bangla sentences** across 10+ categories
+  (shopping, food, travel, education, healthcare, and more)
+- **Auto model selection** — trains 3 models, picks the best
+- **Character-level n-grams** — works without word tokenization,
+  ideal for morphologically rich languages like Bangla
+
+This project is part of my journey toward an **MSc in Computer
+Science & AI** where I aim to specialize in low-resource
+language NLP.
 
 ---
 
 ## 🔮 Roadmap
 
 - [x] Basic sentiment detection (Positive / Negative)
-- [x] Web interface with confidence score
-- [x] Animated result display
-- [x] Expand dataset to 500+ sentences
+- [x] Web interface with confidence score & animated bar
+- [x] 500 balanced Bangla sentences (250 pos / 250 neg)
+- [x] Auto model selection (LR vs SVM vs Random Forest)
+- [x] 10+ real-world categories in dataset
+- [ ] Expand dataset to 2000+ sentences
 - [ ] Add Neutral sentiment class
-- [ ] Integrate BERT / BanglaBERT for higher accuracy
+- [ ] Integrate BanglaBERT for higher accuracy
 - [ ] Deploy on Hugging Face Spaces (public demo)
 - [ ] REST API for third-party integration
-
----
-
-## 💡 Why I built this
-
-Bangladesh has **170 million** Bangla speakers, yet NLP tools for
-Bangla remain scarce compared to English. This project is a small
-step toward bridging that gap — analyzing sentiment in product
-reviews, social media posts, and customer feedback in Bangla.
-
-This project is part of my journey toward an **MSc in Computer
-Science & AI** where I aim to work on low-resource language NLP.
+- [ ] Browser extension for real-time sentiment detection
 
 ---
 
@@ -148,5 +166,6 @@ BSc in Computer Science & Engineering
 
 ---
 
+> *"170 million people speak Bangla — they deserve better NLP tools."*
 > *"The best way to learn Machine Learning is to build something
 > that actually matters."*
