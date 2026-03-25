@@ -167,5 +167,6 @@ BSc in Computer Science & Engineering
 ---
 
 > *"170 million people speak Bangla — they deserve better NLP tools."*
+
 > *"The best way to learn Machine Learning is to build something
 > that actually matters."*
